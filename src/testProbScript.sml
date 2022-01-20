@@ -36,10 +36,11 @@ Theorem expectation_add:
    prob_space p ==>
    real_random_variable X p ==>
    real_random_variable Y p ==>
-   integrable p (\x. X x + Y x) ==>
+   integrable p X ==>
+   integrable p Y ==>
    expectation p (\x. X x + Y x) = expectation p X + expectation p Y
 Proof
- cheat
+ rw [expectation_def,real_random_variable_def,prob_space_def,integral_add]
 QED
 
 (* E [ aX ] = a * E [ X] *)
