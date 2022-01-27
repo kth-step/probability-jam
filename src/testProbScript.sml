@@ -1,4 +1,4 @@
-open HolKernel boolLib Parse bossLib pred_setTheory arithmeticTheory realTheory extrealTheory sigma_algebraTheory RealArith realSimps measureTheory lebesgueTheory borelTheory probabilityTheory;
+open HolKernel boolLib Parse bossLib pred_setTheory arithmeticTheory realTheory extrealTheory sigma_algebraTheory RealArith realSimps measureTheory lebesgueTheory borelTheory real_borelTheory probabilityTheory;
 
 (* compare real_probabilityTheory, the old theory *)
 
@@ -97,6 +97,81 @@ Proof
  rw [bernoulli_random_variable,bernoulli_prob_space,random_variable_def,prob_def,bernoulli_mu]
 QED
 
+Theorem bernoulli_sigma_algebra:
+ sigma_algebra ({0; 1},POW {0; 1})
+Proof
+ rw [sigma_algebra_def,POW_DEF] >-
+  (rw [algebra_def,subset_class_def,SUBSET_DEF] >>
+   Cases_on `0 IN s` >> fs [] >>
+   Cases_on `1 IN s` >> fs []) >>
+ fs [SUBSET_DEF] >> METIS_TAC []
+QED
+
+Theorem IN_MEASURABLE_BOREL_SUM':
+ !a f g (s : 'a -> bool). FINITE s /\ sigma_algebra a /\
+  (!i. i IN s ==> (f i) IN measurable a Borel) /\
+  (!i x. i IN s /\ x IN space a ==> f i x <> NegInf) /\
+  (!x. x IN space a ==> (g x = SIGMA (\i. (f i) x) s)) ==>
+  g IN measurable a Borel
+Proof
+ METIS_TAC [IN_MEASURABLE_BOREL_SUM]
+QED
+
+Theorem zero_le_neq_NegInf:
+ !r. 0 <= r ==> r <> NegInf
+Proof
+ Cases_on `r` >> Cases_on `0` >> fs [extreal_le_def]
+QED
+
+Theorem bernoulli_sigma_borel_measurable:
+ !X i' pr s.
+  FINITE s ==>
+  (!i x. 0 <= X i x) ==>
+  (!i. i IN s ==>
+   (X i IN measurable (m_space (bernoulli_prob_space pr (X i')),
+    measurable_sets (bernoulli_prob_space pr (X i'))) Borel)) ==>
+  (\x. SIGMA (\i. X i x) s) IN
+    (measurable (m_space (bernoulli_prob_space pr (X i')),
+    measurable_sets (bernoulli_prob_space pr (X i'))) Borel)
+Proof
+ rw [] >>
+ MATCH_MP_TAC IN_MEASURABLE_BOREL_SUM' >>
+ Q.EXISTS_TAC `X` >>
+ Q.EXISTS_TAC `s` >>
+ rw [m_space_def,bernoulli_prob_space,bernoulli_sigma_algebra] >>
+ METIS_TAC [zero_le_neq_NegInf]
+QED
+
+Theorem bernoulli_prob_space_measure_space[local]:
+ !g pr.
+  pr <> PosInf ==>
+  prob_space (bernoulli_prob_space pr g)
+Proof
+ rw [prob_space_def,measure_space_def,bernoulli_prob_space] >-
+ rw [bernoulli_sigma_algebra] >| [
+  cheat,
+  cheat,
+  rw [bernoulli_mu] >>
+  cheat
+ ]
+QED
+
+Theorem bernoulli_integrable[local]:
+ !X i' pr s. 
+ FINITE s ==>
+ (!i x. 0 <= X i x) ==>
+ (!i. i IN s ==>
+  (X i IN measurable (m_space (bernoulli_prob_space pr (X i')),
+    measurable_sets (bernoulli_prob_space pr (X i'))) Borel)) ==>
+  integrable (bernoulli_prob_space pr (X i')) (\x. SIGMA (\i. X i x) s)
+Proof
+ rw [integrable_def] >| [
+  rw [bernoulli_sigma_borel_measurable],
+  rw [pos_fn_integral_sum] >> cheat,
+  cheat
+ ]
+QED
+
 Theorem bernoulli_expectation[local]:
  !s i' X pr.
  bernoulli_random_variable (X i') pr ==>
@@ -105,6 +180,10 @@ Theorem bernoulli_expectation[local]:
     measurable_sets (bernoulli_prob_space pr (X i'))) Borel)) ==>
  expectation (bernoulli_prob_space pr (X i')) (\x. SIGMA (\i. X i x) s) = pr * &CARD s
 Proof
+ rw [bernoulli_random_variable,m_space_def,expectation_def,bernoulli_prob_space,bernoulli_mu,random_variable_def,p_space_def,events_def] >>
+ rw [measure_space_def] >>
+ rw [sigma_algebra_def] >>
+ rw [integral_def,pos_fn_integral_def] >>
  cheat
 QED
 
