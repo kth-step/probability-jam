@@ -43,7 +43,7 @@ Proof
  rw [expectation_def,real_random_variable_def,prob_space_def,integral_add]
 QED
 
-(* E [ aX ] = a * E [ X] *)
+(* E [ aX ] = a * E [ X ] *)
 Theorem expectation_mult:
  !p X a.
   prob_space p ==>
@@ -54,11 +54,54 @@ Proof
  rw [expectation_def,real_random_variable_def,prob_space_def,integral_cmul]
 QED
 
-val varx2 = variance_eq;
+(* VAR [ X ] = E [ X^2 ] - E [ X ]^2  *)
+Theorem var_expectation_x2:
+ !p X.
+  prob_space p ==>
+  real_random_variable X p ==> 
+  integrable p (\x. X x pow 2) ==>
+  variance p X = expectation p (\x. X x pow 2) - expectation p X pow 2
+Proof
+ rw [variance_eq]
+QED
 
 (* 5.4 conditional probabilities *)
 
 val def_5_14 = cond_prob_def;
+
+(* Bernoulli random variables *)
+
+Definition mu:
+ mu g pr = (\a. if (a = {x | g x = 1}) then pr else (1 - pr))
+End
+
+Definition bernoulli_prob_space:
+ bernoulli_prob_space pr g = ({0;1},POW {0;1},mu g pr)
+End
+
+Definition bernoulli_random_variable:
+ bernoulli_random_variable X pb =
+  random_variable X (bernoulli_prob_space pb X) Borel
+End
+
+Theorem bernoulli_prob:
+ !i X pr.
+  bernoulli_random_variable (X i) pr ==>
+  prob (bernoulli_prob_space pr (X i)) { x | X i x = 1 } = pr
+Proof
+ rw [bernoulli_random_variable,bernoulli_prob_space,random_variable_def,prob_def,mu]
+QED
+
+Theorem bernoulli_expectation[local]:
+ !s i' X pr.
+ bernoulli_random_variable (X i') pr ==>
+ (!i. i IN s ==> 
+  (X i IN measurable (m_space (bernoulli_prob_space pr (X i')),
+    measurable_sets (bernoulli_prob_space pr (X i'))) Borel)) ==>
+ expectation (bernoulli_prob_space pr (X i')) (\x. SIGMA (\i. X i x) s) = pr * &(CARD s)
+Proof
+ cheat
+QED
 
 val _ = export_theory ();
 
