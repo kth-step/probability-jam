@@ -1,4 +1,4 @@
-open HolKernel boolLib Parse bossLib pred_setTheory arithmeticTheory realTheory extrealTheory sigma_algebraTheory RealArith realSimps lebesgueTheory probabilityTheory;
+open HolKernel boolLib Parse bossLib pred_setTheory arithmeticTheory realTheory extrealTheory sigma_algebraTheory RealArith realSimps lebesgueTheory borelTheory probabilityTheory;
 
 (* compare real_probabilityTheory, the old theory *)
 
@@ -48,12 +48,10 @@ Theorem expectation_mult:
  !p X a.
   prob_space p ==>
   real_random_variable X p ==>
-  integrable p (\x. a * X x) ==>
-  expectation p (\x. a * X x) = a * expectation p X
+  integrable p X ==>
+  expectation p (\x. Normal a * X x) = Normal a * expectation p X
 Proof
- rw [expectation_def,real_random_variable_def,prob_space_def] >>
- rw [integrable_from_square] >>
- cheat
+ rw [expectation_def,real_random_variable_def,prob_space_def,integral_cmul]
 QED
 
 val varx2 = variance_eq;
