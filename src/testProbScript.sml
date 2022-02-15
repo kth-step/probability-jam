@@ -4,6 +4,70 @@ open HolKernel boolLib Parse bossLib pred_setTheory arithmeticTheory realTheory 
 
 val _ = new_theory "testProb";
 
+(*
+ * Boole's inequality for finite sum/union
+ * (sometimes called Bonferroni's first inequality)
+ *   P ( ∪ S ) <= Σ_{ s ∈ S }  P (s)
+ *)
+
+(* same as PROB_SUBADDITIVE *)
+
+Theorem prob_subadditive:
+  !p t u. prob_space p /\ t IN events p /\ u IN events p ==>
+          prob p (t UNION u) <= prob p t + prob p u
+Proof
+  rw[]
+  >> `prob p (t UNION (u DIFF t)) = prob p t + prob p (u DIFF t)` by (
+    irule PROB_ADDITIVE
+    >> asm_rewrite_tac[]
+    >> fs[DISJOINT_ALT,EVENTS_DIFF]
+  )
+  >> qmatch_assum_abbrev_tac `prob p s = _`
+  >> qmatch_goalsub_abbrev_tac `prob p s' <= _`
+  >> `s = s'` by fs[Abbr`s`,Abbr`s'`]
+  >> fs[]
+  >> irule le_ladd_imp
+  >> irule PROB_INCREASING
+  >> fs[EVENTS_DIFF]
+QED
+
+(* PROB_FINITE for union of sets *)
+
+Theorem PROB_FINITE_SUBSET:
+  !p s U.
+    prob_space p /\ U SUBSET events p /\ FINITE U /\ s IN U ==>
+    prob p s <> NegInf /\ prob p s <> PosInf
+Proof
+  rpt gen_tac >> strip_tac
+  >> irule PROB_FINITE
+  >> drule_then (drule_then assume_tac) EVENTS_COUNTABLE_UNION
+  >> gs[cardinalTheory.FINITE_IMP_COUNTABLE]
+  >> fs[SUBSET_DEF]
+QED
+
+Theorem prob_BIGUNION_subadditive:
+  !U p. FINITE U /\ prob_space p /\ U SUBSET events p ==>
+      prob p (BIGUNION U) <= SIGMA (prob p) U
+Proof
+  fs[GSYM AND_IMP_INTRO,GSYM PULL_FORALL]
+  >> ho_match_mp_tac FINITE_INDUCT
+  >> rw[PROB_EMPTY,EXTREAL_SUM_IMAGE_THM]
+  >> irule le_trans
+  >> irule_at Any prob_subadditive
+  >> drule_then (drule_then assume_tac) EVENTS_COUNTABLE_UNION
+  >> gs[cardinalTheory.FINITE_IMP_COUNTABLE]
+  >> `SIGMA (prob p) (e INSERT U) = prob p e + SIGMA (prob p) (U DELETE e)` by (
+    ho_match_mp_tac $ cj 3 EXTREAL_SUM_IMAGE_THM
+    >> dsimp[PROB_FINITE]
+    >> disj1_tac
+    >> rw[]
+    >> drule_all PROB_FINITE_SUBSET
+    >> fs[]
+  )
+  >> gs[DELETE_NON_ELEMENT,le_ladd_imp]
+QED
+
+
 (* 5.1: probability spaces/measures *)
 
 val def_5_1 = prob_space_def;
