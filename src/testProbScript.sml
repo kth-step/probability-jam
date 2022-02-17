@@ -184,7 +184,7 @@ QED
 Theorem zero_le_neq_NegInf:
  !r. 0 <= r ==> r <> NegInf
 Proof
- Cases_on `r` >> Cases_on `0` >> fs [extreal_le_def]
+ fs[extreal_le_def,extreal_of_num_def]
 QED
 
 Theorem bernoulli_sigma_borel_measurable:
