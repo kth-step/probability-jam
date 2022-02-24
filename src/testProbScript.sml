@@ -120,6 +120,102 @@ Proof
  rw [integral_cmul]
 QED
 
+Theorem integral_const:
+  !p a. prob_space p
+  /\ 0 <= a
+  ==> pos_fn_integral p (λx. Normal a) = Normal a
+Proof
+  rpt gen_tac
+  >> qmatch_goalsub_abbrev_tac `pos_fn_integral _ f`
+  >> rw[pos_fn_integral_def,sup_eq]
+  >> cheat
+QED
+
+(* third property after 5.8 *)
+(* E [ a ] = a *)
+Theorem expectation_const:
+  !p a.
+    prob_space p ==>
+    expectation p (\x. Normal a) = Normal a
+Proof
+  rw[expectation_def,prob_space_def,integral_def]
+  >> Cases_on `0 <= a`
+  >> qmatch_goalsub_abbrev_tac `pos_fn_integral _ (f)^+`
+  >> fs[REAL_NOT_LE]
+  >- (
+    `nonneg f` by
+      rw[Abbr`f`,nonneg_def,pairTheory.ELIM_UNCURRY,extreal_of_num_def,extreal_le_eq]
+    >> `pos_fn_integral p f^- = 0` by
+      fs[pos_fn_integral_zero,nonneg_fn_minus]
+    >> fs[Abbr`f`]
+    >> fs[FN_PLUS_POS_ID,extreal_of_num_def,extreal_le_eq,integral_const,prob_space_def]
+  )
+  >> `nonneg (λx. -f x)` by
+      rw[Abbr`f`,nonneg_def,pairTheory.ELIM_UNCURRY,extreal_of_num_def,extreal_le_eq,extreal_ainv_def,REAL_LT_IMP_LE]
+  >> `pos_fn_integral p (λx. - f x)^- = 0` by
+    fs[pos_fn_integral_zero,nonneg_fn_minus]
+  >> fs[FN_MINUS_TO_PLUS]
+  >> fs[GSYM FN_PLUS_TO_MINUS,FN_PLUS_POS_ID,nonneg_def]
+  >> fs[Abbr`f`,REAL_SUB_LT,integral_const,prob_space_def,extreal_ainv_def,REAL_LT_IMP_LE]
+QED
+
+Theorem random_le_fn_plus:
+  !A X Y. (!x. A x ==> X x <= Y x)
+  ==> (!x. A x ==> X^+ x <= Y^+ x)
+Proof
+  fs[FN_PLUS_ALT,max_le,le_max]
+QED
+
+Theorem random_le_fn_minus:
+  !A X Y. (!x. A x ==> X x <= Y x)
+  ==> (!x. A x ==> Y^- x <= X^- x)
+Proof
+  fs[FN_MINUS_ALT,le_neg,le_min]
+  >> fs[min_le]
+QED
+
+Theorem le_zero_extreal:
+  !x. x <= 0x <=> 0x <= -x
+Proof
+  Cases >> fs[extreal_le_def,extreal_of_num_def,extreal_ainv_def]
+QED
+
+(* fourth property after 5.8 *)
+(* X <= Y ==> E [ X ] <= E [ Y ] *)
+Theorem expectation_leq:
+  !p X Y.
+    prob_space p
+    /\ real_random_variable X p
+    /\ real_random_variable Y p
+    /\ integrable p X
+    /\ integrable p Y
+    /\ (!x. x IN p_space p ==> X x <= Y x)
+    ==> expectation p X <= expectation p Y
+Proof
+  rw[expectation_def,integral_def,prob_space_def,integral_def,p_space_def]
+  >> qmatch_goalsub_abbrev_tac `a - b <= c - d`
+  >> `a <= c` by (
+    unabbrev_all_tac
+    >> irule pos_fn_integral_mono
+    >> fs[IN_DEF]
+    >> imp_res_tac random_le_fn_plus
+    >> fs[FN_PLUS_ALT,le_max]
+  )
+  >> `d <= b` by (
+    unabbrev_all_tac
+    >> irule pos_fn_integral_mono
+    >> fs[IN_DEF]
+    >> imp_res_tac random_le_fn_minus
+    >> rw[FN_MINUS_ALT,le_min,extreal_min_def]
+    >> fs[le_zero_extreal]
+  )
+  (* >> metis_tac[le_trans,le_rsub_imp,le_lsub_imp] *)
+  >> irule le_trans
+  >> irule_at (Pos $ el 1) le_rsub_imp
+  >> goal_assum drule
+  >> fs[le_lsub_imp]
+QED
+
 (* VAR [ X ] = E [ X^2 ] - E [ X ]^2  *)
 Theorem var_expectation_x2:
  !p X.
